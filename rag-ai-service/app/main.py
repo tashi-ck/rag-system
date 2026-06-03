@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from .db.database import test_connection
-from .routers import documents
+from .routers import documents, admin, chat
 
 load_dotenv()
 
@@ -18,6 +18,8 @@ app.add_middleware(
 
 # Register routers
 app.include_router(documents.router)
+app.include_router(admin.router)
+app.include_router(chat.router)
 
 @app.on_event("startup")
 def startup():
