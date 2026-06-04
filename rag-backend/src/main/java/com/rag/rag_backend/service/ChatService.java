@@ -15,26 +15,23 @@ public class ChatService {
     private final MessageRepository messageRepo;
     private final UserRepository userRepo;
 
-    public Map<String, Object> ask(String question, String conversationId, String email) {
+    public Map<?, ?> ask(String question, String conversationId, String email) {
         User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Call the Python AI service
-        Map<String, Object> aiResponse = aiService.askQuestion(question);
+        // Pass the user's UUID so Python scopes the search to their documents
+        Map<String, Object> aiResponse = aiService.askQuestion(question, user.getId().toString());
         String answer = (String) aiResponse.get("answer");
 
-        // Find or create conversation
         Conversation conversation;
         if (conversationId != null) {
             conversation = conversationRepo.findById(UUID.fromString(conversationId))
                     .orElseGet(() -> conversationRepo.save(
                             Conversation.builder().user(user).build()));
         } else {
-            conversation = conversationRepo.save(
-                    Conversation.builder().user(user).build());
+            conversation = conversationRepo.save(Conversation.builder().user(user).build());
         }
 
-        // Save this turn
         messageRepo.save(Message.builder()
                 .conversation(conversation)
                 .question(question)
@@ -66,10 +63,20 @@ public class ChatService {
 
         return conversationRepo.findByUserOrderByCreatedAtDesc(user)
                 .stream()
-                .map(c -> Map.<String, Object>of(
-                        "id",         c.getId().toString(),
-                        "created_at", c.getCreatedAt().toString()
-                ))
+                .map(c -> {
+                    // Use the first question of the conversation as the title
+                    String title = messageRepo.findByConversationOrderByCreatedAtAsc(c)
+                            .stream().findFirst()
+                            .map(m -> m.getQuestion().length() > 40
+                                    ? m.getQuestion().substring(0, 40) + "…"
+                                    : m.getQuestion())
+                            .orElse("New conversation");
+                    return Map.<String, Object>of(
+                            "id",         c.getId().toString(),
+                            "title",      title,
+                            "created_at", c.getCreatedAt().toString()
+                    );
+                })
                 .toList();
     }
 }

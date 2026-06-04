@@ -5,8 +5,7 @@ from typing import Dict
 import os
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-SIMILARITY_THRESHOLD = 0.3   # discard chunks below this score
+SIMILARITY_THRESHOLD = 0.3
 
 def build_prompt(question: str, chunks: list) -> str:
     context_blocks = []
@@ -15,51 +14,44 @@ def build_prompt(question: str, chunks: list) -> str:
             f"[Source {i}: {chunk['document_name']}, page {chunk['page_no']}]\n"
             f"{chunk['chunk_text']}"
         )
-    context = "\n\n".join(context_blocks)
-
-    return f"""You are a helpful assistant that answers questions strictly based on the provided context.
-If the answer is not found in the context, say "I don't have enough information to answer this question."
-Never make up information.
+    return f"""You are a helpful assistant. Answer strictly using the provided context.
+If the answer is not in the context, say "I don't have enough information to answer this."
 
 CONTEXT:
-{context}
+{chr(10).join(context_blocks)}
 
-QUESTION:
-{question}
-
+QUESTION: {question}
 ANSWER:"""
 
-def answer_question(question: str, db: Session) -> Dict:
-    # 1. Retrieve relevant chunks
-    chunks = retrieve_relevant_chunks(question, db)
+def answer_question(
+    question: str,
+    db: Session,
+    user_id: str = None,      # ← new parameter
+) -> Dict:
 
-    # 2. Filter out low-similarity chunks
+    chunks      = retrieve_relevant_chunks(question, db, user_id=user_id)
     good_chunks = [c for c in chunks if c["similarity"] >= SIMILARITY_THRESHOLD]
 
     if not good_chunks:
         return {
-            "answer":  "I don't have enough information to answer this question.",
-            "sources": [],
+            "answer":      "I don't have enough information to answer this question.",
+            "sources":     [],
             "chunks_used": 0,
         }
 
-    # 3. Build prompt and call GPT-4
-    prompt   = build_prompt(question, good_chunks)
     response = client.chat.completions.create(
-        model="gpt-4o",          # or "gpt-4-turbo" based on your plan
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": "You are a helpful document assistant."},
-            {"role": "user",   "content": prompt},
+            {"role": "user",   "content": build_prompt(question, good_chunks)},
         ],
-        temperature=0.1,         # low temperature = factual, consistent answers
+        temperature=0.1,
         max_tokens=1000,
     )
 
     answer = response.choices[0].message.content.strip()
 
-    # 4. Deduplicate sources
-    seen    = set()
-    sources = []
+    seen, sources = set(), []
     for chunk in good_chunks:
         key = (chunk["document_name"], chunk["page_no"])
         if key not in seen:
@@ -70,8 +62,4 @@ def answer_question(question: str, db: Session) -> Dict:
                 "score":    chunk["similarity"],
             })
 
-    return {
-        "answer":      answer,
-        "sources":     sources,
-        "chunks_used": len(good_chunks),
-    }
+    return {"answer": answer, "sources": sources, "chunks_used": len(good_chunks)}
