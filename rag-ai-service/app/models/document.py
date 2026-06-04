@@ -9,10 +9,11 @@ from datetime import datetime
 class Document(Base):
     __tablename__ = "documents"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String(255), nullable=False)
-    s3_url = Column(String(500))
+    id          = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name        = Column(String(255), nullable=False)
+    s3_url      = Column(String(500))
     upload_date = Column(DateTime, default=datetime.utcnow)
+    uploaded_by = Column(UUID(as_uuid=True), nullable=True)   # ← owner user ID
 
     chunks = relationship("Chunk", back_populates="document",
                           cascade="all, delete-orphan")
@@ -20,12 +21,12 @@ class Document(Base):
 class Chunk(Base):
     __tablename__ = "chunks"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id          = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     document_id = Column(UUID(as_uuid=True),
                          ForeignKey("documents.id", ondelete="CASCADE"))
-    chunk_text = Column(Text, nullable=False)
-    embedding = Column(Vector(1536))   # matches OpenAI text-embedding-3-small
-    page_no = Column(Integer)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    chunk_text  = Column(Text, nullable=False)
+    embedding   = Column(Vector(1536))
+    page_no     = Column(Integer)
+    created_at  = Column(DateTime, default=datetime.utcnow)
 
     document = relationship("Document", back_populates="chunks")

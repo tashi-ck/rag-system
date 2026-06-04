@@ -11,14 +11,16 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Auth
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
 export const register = (name, email, password) =>
   api.post("/auth/register", { name, email, password });
 
 export const login = (email, password) =>
   api.post("/auth/login", { email, password });
 
-// Documents
+// ─── Documents ───────────────────────────────────────────────────────────────
+
 export const uploadDocument = (file) => {
   const form = new FormData();
   form.append("file", file);
@@ -27,7 +29,11 @@ export const uploadDocument = (file) => {
   });
 };
 
-// Chat
+export const getMyDocuments = () =>
+  api.get("/documents");
+
+// ─── Chat ─────────────────────────────────────────────────────────────────────
+
 export const askQuestion = (question, conversationId = null) =>
   api.post("/chat/ask", { question, conversationId });
 
