@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from .db.database import test_connection
 from .routers import documents, admin, chat
 
-load_dotenv()
+# load_dotenv()
 
 app = FastAPI(title="RAG AI Service", version="1.0.0")
 

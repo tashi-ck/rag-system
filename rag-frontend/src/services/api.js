@@ -42,3 +42,11 @@ export const getConversations = () =>
 
 export const getMessages = (conversationId) =>
   api.get(`/chat/conversations/${conversationId}/messages`);
+
+// ─── Conversations ────────────────────────────────────────────────────────────
+export const deleteConversation = (conversationId) =>
+  api.delete(`/chat/conversations/${conversationId}`);
+
+// ─── Documents ───────────────────────────────────────────────────────────────
+export const deleteDocument = (documentId) =>
+  api.delete(`/documents/${documentId}`);

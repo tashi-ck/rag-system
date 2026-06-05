@@ -12,6 +12,7 @@ function UserBubble({ content }) {
   );
 }
 
+// Inside AssistantBubble:
 function AssistantBubble({ content, sources }) {
   return (
     <div className="flex justify-start">
@@ -20,7 +21,7 @@ function AssistantBubble({ content, sources }) {
                         px-4 py-3 text-sm leading-relaxed text-gray-800 shadow-sm">
           {content}
         </div>
-        <SourceBadge sources={sources} />
+        <SourceBadge sources={sources} answer={content} />  {/* pass answer */}
       </div>
     </div>
   );
