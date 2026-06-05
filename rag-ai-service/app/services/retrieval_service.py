@@ -3,7 +3,7 @@ from sqlalchemy import text
 from ..services.embedding_service import embed_text
 from typing import List, Dict
 
-TOP_K = 5
+TOP_K = 8
 
 def retrieve_relevant_chunks(
     question: str,

@@ -53,3 +53,26 @@ def list_documents(user_id: Optional[str] = None, db: Session = Depends(get_db))
         }
         for d in docs
     ]
+
+@router.delete("/{document_id}")
+def delete_document(
+    document_id: str,
+    user_id: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    import uuid as uuid_lib
+    doc = db.query(Document).filter(
+        Document.id == uuid_lib.UUID(document_id)
+    ).first()
+
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found.")
+
+    # Ownership check — only the uploader can delete
+    if user_id and str(doc.uploaded_by) != user_id:
+        raise HTTPException(status_code=403, detail="Not authorised.")
+
+    db.delete(doc)   # cascades to chunks automatically via ON DELETE CASCADE
+    db.commit()
+
+    return {"deleted": document_id}

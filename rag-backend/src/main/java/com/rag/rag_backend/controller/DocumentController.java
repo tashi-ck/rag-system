@@ -42,4 +42,18 @@ public class DocumentController {
         return ResponseEntity.ok(
                 aiService.listDocuments(user.getId().toString()));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteDocument(
+            @PathVariable String id,
+            @AuthenticationPrincipal String email) {
+
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Tell Python to delete the document and its chunks
+        aiService.deleteDocument(id, user.getId().toString());
+
+        return ResponseEntity.noContent().build();
+    }
 }
