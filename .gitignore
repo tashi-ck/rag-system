@@ -9,6 +9,7 @@ rag-ai-service/app/.env
 # Java
 rag-backend/target/
 rag-backend/.env
+.env
 
 # Node
 rag-frontend/node_modules/
